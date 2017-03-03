@@ -1,1 +1,1 @@
-# eh_device_peer_csv
+# eh_device_peer_csvUtility that queries and ExtraHop EDA system, and generates a CSV file of all device peers with packets and bytes sent and received to those peers csv file is of the format:```Peer IP, Packets In, Packets Out, Bytes In, Bytes Out```The key file takes the following form:```{    [host] : [EDA API Key]}```
