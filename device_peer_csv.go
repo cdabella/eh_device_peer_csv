@@ -15,13 +15,13 @@ import (
 
 type peerDetails struct {
 	//Metrics map[string]int
-	Metrics [4]int
+	Metrics [4]int64
 }
 
 func newPeerDetails() peerDetails {
 	var p peerDetails
 	//p.Metrics = map[string]int{"BytesIn": 0, "BytesOut": 0, "PacketsIn": 0, "PacketsOut": 0}
-	p.Metrics = [4]int{0, 0, 0, 0}
+	p.Metrics = [4]int64{0, 0, 0, 0}
 	return p
 }
 
@@ -52,23 +52,13 @@ type stat struct {
 type value struct {
 	Key   keyDetail `json:"key"`
 	Vtype string    `json:"vtype"`
-	Value int       `json:"value"`
+	Value int64     `json:"value"`
 }
 
 type keyDetail struct {
 	KeyType   string `json:"key_type"`
 	Addr      string `json:"addr"`
 	DeviceOID int    `json:"device_oid"`
-}
-
-func mapToMetric(i int) string {
-	mapping := map[int]string{
-		0: "BytesIn",
-		1: "BytesOut",
-		2: "PacketsIn",
-		3: "PacketsOut",
-	}
-	return mapping[i]
 }
 
 func main() {
@@ -119,8 +109,6 @@ func main() {
 	for _, stat := range metricRsp.Stats {
 		for i, values := range stat.Values {
 			for _, metric := range values {
-				//metricLabel := mapToMetric(i)
-				//peerList[metric.Key.Addr].Metrics[metricLabel] = metric.Value
 				p := peerList[metric.Key.Addr]
 				p.Metrics[i] = metric.Value
 				peerList[metric.Key.Addr] = p
@@ -133,7 +121,7 @@ func main() {
 	io.WriteString(f, "PeerIP,Packets In,Packets Out,Bytes In,Bytes Out\n")
 	for ip, peerDetails := range peerList {
 		m := peerDetails.Metrics
-		io.WriteString(f, ip+","+strconv.Itoa(m[0])+","+strconv.Itoa(m[1])+","+strconv.Itoa(m[2])+","+strconv.Itoa(m[3])+"\n")
+		io.WriteString(f, ip+","+strconv.FormatInt(m[0], 10)+","+strconv.FormatInt(m[1], 10)+","+strconv.FormatInt(m[2], 10)+","+strconv.FormatInt(m[3], 10)+"\n")
 	}
 	f.Close()
 
