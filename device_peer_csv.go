@@ -14,13 +14,11 @@ import (
 )
 
 type peerDetails struct {
-	//Metrics map[string]int
 	Metrics [4]int64
 }
 
 func newPeerDetails() peerDetails {
 	var p peerDetails
-	//p.Metrics = map[string]int{"BytesIn": 0, "BytesOut": 0, "PacketsIn": 0, "PacketsOut": 0}
 	p.Metrics = [4]int64{0, 0, 0, 0}
 	return p
 }
@@ -37,15 +35,15 @@ type metricRsp struct {
 	Stats  []stat `json:"stats"`
 	Cycle  string `json:"cycle"`
 	NodeID int    `json:"node_id"`
-	From   int    `json:"from"`
-	Until  int    `json:"until"`
-	Clock  int    `json:"clock"`
+	From   int64  `json:"from"`
+	Until  int64  `json:"until"`
+	Clock  int64  `json:"clock"`
 }
 
 type stat struct {
 	OID      int       `json:"oid"`
-	Time     int       `json:"time"`
-	Duration int       `json:"duration"`
+	Time     int64     `json:"time"`
+	Duration int64     `json:"duration"`
 	Values   [][]value `json:"values"`
 }
 
