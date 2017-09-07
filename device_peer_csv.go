@@ -41,21 +41,33 @@ type metricRsp struct {
 }
 
 type stat struct {
-	OID      int       `json:"oid"`
-	Time     int64     `json:"time"`
-	Duration int64     `json:"duration"`
-	Values   [][]value `json:"values"`
+	OID      int           `json:"oid"`
+	Time     int64         `json:"time"`
+	Duration int64         `json:"duration"`
+	Values   [][]tSetValue `json:"values"` //Outer array represents multi-metric requests
 }
 
-type value struct {
-	Key   keyDetail `json:"key"`
+type tSetValue struct {
+	Key   protocolKey   `json:"key"`
+	Vtype string        `json:"vtype"`
+	Value []deviceValue `json:"value"`
+}
+
+type deviceValue struct {
+	Key   deviceKey `json:"key"`
 	Vtype string    `json:"vtype"`
 	Value int64     `json:"value"`
 }
 
-type keyDetail struct {
+type protocolKey struct {
+	KeyType  string `json:"key_type"`
+	Protocol string `json:"str"`
+}
+
+type deviceKey struct {
 	KeyType   string `json:"key_type"`
 	Addr      string `json:"addr"`
+	Host      string `json:"host"`
 	DeviceOID int    `json:"device_oid"`
 }
 
@@ -70,9 +82,9 @@ func main() {
 	myhop := ehop.NewEDAfromKey(keyFile)
 
 	deviceID := askForInput("What is the device id?")
-	body := `{"cycle": "auto","from": ` + strconv.Itoa(lookback) + `, "metric_category": "net_detail", "metric_specs": [{"name": "pkts_in"},{"name": "pkts_out"},{"name": "bytes_in"},{"name": "bytes_out"}],"object_ids": [` + deviceID + `],"object_type": "device","until": 0}`
+	body := `{"cycle": "auto","from": ` + strconv.Itoa(lookback) + `, "metric_category": "app_detail", "metric_specs": [{"name": "pkts_in"},{"name": "pkts_out"},{"name": "bytes_in"},{"name": "bytes_out"}],"object_ids": [` + deviceID + `],"object_type": "device","until": 0}`
 
-	//Get all devices from the system
+	//Get all peers from the EDA
 	resp, error := ehop.CreateEhopRequest("POST", "metrics/total", body, myhop)
 	defer resp.Body.Close()
 
@@ -98,25 +110,28 @@ func main() {
 
 	for _, stat := range metricRsp.Stats {
 		for _, values := range stat.Values {
-			for _, metric := range values {
-				peerList[metric.Key.Addr] = newPeerDetails()
+			for _, protocol := range values {
+				for _, peer := range protocol.Value {
+					peerList[peer.Key.Addr+","+protocol.Key.Protocol] = newPeerDetails()
+				}
 			}
 		}
 	}
-
 	for _, stat := range metricRsp.Stats {
 		for i, values := range stat.Values {
-			for _, metric := range values {
-				p := peerList[metric.Key.Addr]
-				p.Metrics[i] = metric.Value
-				peerList[metric.Key.Addr] = p
+			for _, protocol := range values {
+				for _, peer := range protocol.Value {
+					p := peerList[peer.Key.Addr+","+protocol.Key.Protocol]
+					p.Metrics[i] = peer.Value
+					peerList[peer.Key.Addr+","+protocol.Key.Protocol] = p
+				}
 			}
 		}
 	}
 
 	f, _ := os.Create("device_" + deviceID + "_peer_details.csv")
 
-	io.WriteString(f, "PeerIP,Packets In,Packets Out,Bytes In,Bytes Out\n")
+	io.WriteString(f, "PeerIP,Protocol,Packets In,Packets Out,Bytes In,Bytes Out\n")
 	for ip, peerDetails := range peerList {
 		m := peerDetails.Metrics
 		io.WriteString(f, ip+","+strconv.FormatInt(m[0], 10)+","+strconv.FormatInt(m[1], 10)+","+strconv.FormatInt(m[2], 10)+","+strconv.FormatInt(m[3], 10)+"\n")
