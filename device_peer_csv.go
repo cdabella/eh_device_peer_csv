@@ -112,7 +112,7 @@ func main() {
 		for _, values := range stat.Values {
 			for _, protocol := range values {
 				for _, peer := range protocol.Value {
-					// This is hacky AF, but it gets the job done.
+					// This is hacky, but it gets the job done.
 					// Use appended IP + proto as the key instead of the
 					peerList[peer.Key.Addr+","+protocol.Key.Protocol] = newPeerDetails()
 				}
